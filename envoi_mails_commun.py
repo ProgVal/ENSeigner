@@ -4,14 +4,11 @@ import os
 import io
 import csv
 import sys
+import cgi
 import codecs
 import functools
 
 CGI_MODE = 'GATEWAY_INTERFACE' in os.environ
-
-if len(sys.argv) != 3:
-    print('Syntaxe : envoi_mails_eleves.py fichier_contacts.csv fichier_personnes_seance.csv')
-    exit(1)
 
 def normalize(x):
     return x.lower().replace(' ', '').replace('é', 'e').replace('è', 'e')
@@ -54,21 +51,21 @@ def make_combinaisons(entree_global):
             (entree_global['Middle Name']+entree_global['Last Name'], entree_global['First Name'])
             )
 
-def get_contacts(filename):
-    with open(sys.argv[1], 'r', encoding='latin1') as fd:
-        people = list(csv.reader(fd, delimiter=','))
-        headers = people[0]
-        people = list(map(lambda x:dict(zip(headers, map(normalize, x))), people[1:]))
-        return people
+def get_contacts(fd):
+    people = list(csv.reader(fd, delimiter=','))
+    headers = people[0]
+    people = list(map(lambda x:dict(zip(headers, map(normalize, x))), people[1:]))
+    return people
 
 def print_email(match):
     sys.stdout.write('%s <%s>, ' % (match[1], match[2]))
     sys.stdout.flush()
 
-def cgi_write(txt):
+def cgi_write(txt, html=False):
     writer = codecs.getwriter('utf8')(sys.stdout.buffer)
 
-    writer.write('Content-type: text/plain; charset=utf8\r\n')
+    mime = 'html' if html else 'plain'
+    writer.write('Content-type: text/%s; charset=utf8\r\n' % mime)
     writer.write('Content-length: %i\r\n' % len(txt.encode()))
     writer.write('\r\n')
     writer.write(txt)
@@ -94,3 +91,32 @@ else:
             pass
 def cgi_capture():
     return CgiCapture()
+
+if CGI_MODE:
+    form = cgi.FieldStorage()
+    if 'contacts' in form:
+        assert 'people' in form
+        contacts = io.StringIO(form['contacts'].file.read().decode('latin1'))
+        people = io.StringIO(form['people'].file.read().decode())
+    else:
+        cgi_write("""<html><head></head><body>
+            <form action="" method="post" enctype="multipart/form-data">
+            <label for="contacts">Fichier contacts</label> 
+            <input type="file" name="contacts" id="contacts" />
+            (Pour obtenir le fichier, aller dans<a href="https://mail.google.com/mail/u/0/?tab=om#contacts">les contacts Gmail</a>, cliquer sur « Plus », puis « Exporter », cocher « Format CSV Outlook »)
+            <br />
+            <br />
+            <label for="people">Fichier des présent(e)s</label>
+            <input type="file" name="people" id="people" />
+            (Pour obtenir le fichier, aller dans <a href="https://drive.google.com/">les Google Drive</a>, cliquer sur le fichier de réponses, puis « File », puis « Download as » et « Comma Separated Values »)
+            <br />
+            <br />
+            <input type="submit" value="Envoi" />
+            </form></body></html>""", True)
+else:
+    if len(sys.argv) != 3:
+        print('Syntaxe : envoi_mails_eleves.py fichier_contacts.csv fichier_personnes_seance.csv')
+        exit(1)
+    else:
+        contacts = open(sys.argv[1], 'r', encoding='latin1')
+        people = open(sys.argv[2])

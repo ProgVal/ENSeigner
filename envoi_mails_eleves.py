@@ -3,9 +3,9 @@
 
 from envoi_mails_commun import *
 
-eleves = get_contacts(sys.argv[1])
+eleves = get_contacts(contacts)
 
-with open(sys.argv[2]) as fd:
+with people as fd:
     seance = list(csv.reader(fd, delimiter=','))
     headers = seance[0]
     fixed_headers = list()

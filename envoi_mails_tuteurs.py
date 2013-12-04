@@ -3,9 +3,9 @@
 
 from envoi_mails_commun import *
 
-tuteurs = get_contacts(sys.argv[1])
+tuteurs = get_contacts(contacts)
 
-with open(sys.argv[2]) as fd:
+with people as fd:
     seance = list(csv.reader(fd, delimiter=','))
     headers = seance[0]
     seance = map(lambda x:dict(zip(headers, map(normalize, x))), seance[1:])
