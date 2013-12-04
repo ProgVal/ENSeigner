@@ -1,20 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf8 -*-
 
-import csv
-import sys
+from envoi_mails_commun import *
 
-if len(sys.argv) != 3:
-    print('Syntaxe : envoi_mails_eleves.py fichier_contacts.csv fichier_eleves_seance.csv')
-    exit(1)
-
-def normalize(x):
-    return x.lower().replace(' ', '').replace('é', 'e').replace('è', 'e')
-
-with open(sys.argv[1], 'r', encoding='latin1') as fd:
-    eleves = list(csv.reader(fd, delimiter=','))
-    headers = eleves[0]
-    eleves = list(map(lambda x:dict(zip(headers, map(normalize, x))), eleves[1:]))
+tuteurs = get_contacts(sys.argv[1])
 
 with open(sys.argv[2]) as fd:
     seance = list(csv.reader(fd, delimiter=','))
@@ -35,16 +24,13 @@ with open(sys.argv[2]) as fd:
         else:
             lists = (fails, fails)
         found = False
-        for entree_global in eleves:
+        for entree_global in tuteurs:
             if not entree_global['First Name']:
                 continue
-            if (entree_seance['Nom'], entree_seance['Prénom']) in (
-                    (entree_global['Middle Name'], entree_global['First Name']),
-                    (entree_global['First Name'], entree_global['Middle Name']),
-                    (entree_global['Last Name'], entree_global['First Name']),
-                    (entree_global['First Name'], entree_global['Last Name'])
-                    ):
-                lists[0].append(entree_global['E-mail Address'])
+            combinaisons = make_combinaisons(entree_global)
+            name = (entree_seance['Nom'], entree_seance['Prénom'])
+            if name in combinaisons:
+                lists[0].append((0, ' '.join(name), entree_global['E-mail Address']))
                 found = True
         if not found:
             lists[1].append(entree_seance)
@@ -52,8 +38,7 @@ with open(sys.argv[2]) as fd:
     print('Confirmation :')
     sys.stdout.write('\t')
     for confirm in confirms:
-        sys.stdout.write(confirm)
-        sys.stdout.write(', ')
+        print_email(confirm)
     print()
     print()
     print('Échecs confirmation :')
@@ -63,8 +48,7 @@ with open(sys.argv[2]) as fd:
     print('Non-confirmation :')
     sys.stdout.write('\t')
     for abort in aborts:
-        sys.stdout.write(abort)
-        sys.stdout.write(', ')
+        print_email(abort)
     print()
     print()
     print('Échecs non-confirmation :')
