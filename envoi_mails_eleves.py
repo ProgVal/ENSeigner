@@ -15,6 +15,7 @@ with open(sys.argv[2]) as fd:
         fixed_headers.append(header)
     headers = fixed_headers
     seance = map(lambda x:dict(zip(headers, map(normalize, x))), seance[1:])
+    confirms = []
     fails = []
     for entree_seance in seance:
         if not entree_seance['Nom']:
@@ -38,11 +39,16 @@ with open(sys.argv[2]) as fd:
                 if not best_match or (delta < best_match[0]):
                     best_match = (delta, ' '.join(nom), entree_global['E-mail Address'])
         if best_match and best_match[0] < 3:
-            print_email(best_match)
+            confirms.append(best_match)
         else:
             fails.append(entree_seance)
 
+with cgi_capture():
+    print('Confirmations :')
+    sys.stdout.write('\t')
+    for confirm in confirms:
+        print_email(confirm)
     print()
     print('Échecs :')
     for fail in fails:
-        print(fail)
+        print('\t' + str(fail))

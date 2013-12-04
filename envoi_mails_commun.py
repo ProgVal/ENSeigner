@@ -1,11 +1,16 @@
 # -*- coding: utf8 -*-
 
+import os
+import io
 import csv
 import sys
+import codecs
 import functools
 
+CGI_MODE = 'GATEWAY_INTERFACE' in os.environ
+
 if len(sys.argv) != 3:
-    print('Syntaxe : envoi_mails_eleves.py fichier_contacts.csv fichier_eleves_seance.csv')
+    print('Syntaxe : envoi_mails_eleves.py fichier_contacts.csv fichier_personnes_seance.csv')
     exit(1)
 
 def normalize(x):
@@ -59,3 +64,33 @@ def get_contacts(filename):
 def print_email(match):
     sys.stdout.write('%s <%s>, ' % (match[1], match[2]))
     sys.stdout.flush()
+
+def cgi_write(txt):
+    writer = codecs.getwriter('utf8')(sys.stdout.buffer)
+
+    writer.write('Content-type: text/plain; charset=utf8\r\n')
+    writer.write('Content-length: %i\r\n' % len(txt.encode()))
+    writer.write('\r\n')
+    writer.write(txt)
+
+if CGI_MODE:
+    class CgiCapture:
+        def __init__(self):
+            pass
+        def __enter__(self):
+            self._stdout = sys.stdout
+            sys.stdout = io.StringIO()
+        def __exit__(self, *args):
+            (sys.stdout, stringio) = (self._stdout, sys.stdout)
+            stringio.seek(0)
+            cgi_write(stringio.read())
+else:
+    class CgiCapture:
+        def __init__(self):
+            pass
+        def __enter__(self):
+            pass
+        def __exit__(self, *args):
+            pass
+def cgi_capture():
+    return CgiCapture()

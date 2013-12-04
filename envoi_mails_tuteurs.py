@@ -34,6 +34,8 @@ with open(sys.argv[2]) as fd:
                 found = True
         if not found:
             lists[1].append(entree_seance)
+
+with cgi_capture():
     print()
     print('Confirmation :')
     sys.stdout.write('\t')
@@ -59,5 +61,3 @@ with open(sys.argv[2]) as fd:
     for fail in fails:
         print('\t' + str(fail))
 
-
-print()
