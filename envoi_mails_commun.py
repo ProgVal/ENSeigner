@@ -11,7 +11,8 @@ import functools
 CGI_MODE = 'GATEWAY_INTERFACE' in os.environ
 
 def normalize(x):
-    return x.lower().replace(' ', '').replace('é', 'e').replace('è', 'e')
+    return x.lower().replace(' ', '').replace('é', 'e').replace('è', 'e') \
+            .replace('\'', '').replace('ï', 'i')
 
 def distance(s, t):
     """Returns the levenshtein edit distance between two strings."""
