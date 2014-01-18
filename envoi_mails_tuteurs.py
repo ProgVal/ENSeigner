@@ -17,10 +17,13 @@ with people as fd:
     for entree_seance in seance:
         if not entree_seance['Nom']:
             continue
-        if entree_seance['confirmation'] == 'oui':
+        if 'confirmation' not in list(map(normalize, headers)) or \
+                entree_seance['confirmation'] == 'oui':
             lists = (confirms, confirm_fails)
         elif entree_seance['confirmation'] == 'non':
             lists = (aborts, abort_fails)
+        elif entree_seance['confirmation'] == 'doublon':
+            pass
         else:
             lists = (fails, fails)
         found = False
