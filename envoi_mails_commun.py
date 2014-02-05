@@ -37,6 +37,54 @@ def distance(s, t):
             d[i][j] = min(d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1]+cost)
     return d[n][m]
 
+def collect_extra_debug_data():
+    """
+    Print the usual traceback information, followed by a listing of all the
+    local variables in each frame.
+    """
+    data = ''
+    try:
+        tb = sys.exc_info()[2]
+        stack = []
+
+        while tb:
+            stack.append(tb.tb_frame)
+            tb = tb.tb_next
+    finally:
+        del tb
+
+    data += 'Locals by frame, innermost last:\n'
+    for frame in stack:
+        data += '\n\n'
+        data += ('Frame %s in %s at line %s\n' % (frame.f_code.co_name,
+                                             frame.f_code.co_filename,
+                                             frame.f_lineno))
+        frame_locals = frame.f_locals
+        for inspected in ('self', 'cls'):
+            if inspected in frame_locals:
+                if hasattr(frame_locals[inspected], '__dict__') and \
+                        frame_locals[inspected].__dict__:
+                    for (key, value) in frame_locals[inspected].__dict__.items():
+                        frame_locals['%s.%s' % (inspected, key)] = value
+        for key, value in frame_locals.items():
+            if key == '__builtins__':
+                # This is flooding
+                continue
+            data += ('\t%20s = ' % key)
+            #We have to be careful not to cause a new error in our error
+            #printer! Calling str() on an unknown object could cause an
+            #error we don't want.
+            try:
+                data += repr(value) + '\n'
+            except:
+                data += '<ERROR WHILE PRINTING VALUE>\n'
+    data += '\n'
+    data += '+-----------------------+\n'
+    data += '| End of locals display |\n'
+    data += '+-----------------------+\n'
+    data += '\n'
+    return data
+
 def distance2(x, y):
     if not all([x[0], x[1], y[0], y[1]]):
         return 10000
@@ -72,14 +120,24 @@ def cgi_write(txt, html=False):
     writer.write(txt)
 
 if CGI_MODE:
+    import traceback
     class CgiCapture:
         def __init__(self):
             pass
         def __enter__(self):
             self._stdout = sys.stdout
+            self._stderr = sys.stderr
             sys.stdout = io.StringIO()
-        def __exit__(self, *args):
-            (sys.stdout, stringio) = (self._stdout, sys.stdout)
+            sys.stderr = io.StringIO()
+        def __exit__(self, e_typ, e_val, trcbak):
+            if e_val:
+                print('Erreur.\n')
+            (sys.stdout, sys.stderr, stringio) = (self._stdout, self._stderr, sys.stdout)
+            if e_val:
+                traceback.print_tb(trcbak, None, stringio)
+                stringio.write(repr(e_val))
+                stringio.write('\n')
+                stringio.write(collect_extra_debug_data())
             stringio.seek(0)
             cgi_write(stringio.read())
 else:
@@ -104,16 +162,17 @@ if CGI_MODE:
             <form action="" method="post" enctype="multipart/form-data">
             <label for="contacts">Fichier contacts</label> 
             <input type="file" name="contacts" id="contacts" />
-            (Pour obtenir le fichier, aller dans<a href="https://mail.google.com/mail/u/0/?tab=om#contacts">les contacts Gmail</a>, cliquer sur « Plus », puis « Exporter », cocher « Format CSV Outlook »)
+            (Pour obtenir le fichier, aller dans <a href="https://mail.google.com/mail/u/0/?tab=om#contacts">les contacts Gmail</a>, cliquer sur « Plus », puis « Exporter », cocher « Format CSV Outlook »)
             <br />
             <br />
             <label for="people">Fichier des présent(e)s</label>
             <input type="file" name="people" id="people" />
-            (Pour obtenir le fichier, aller dans <a href="https://drive.google.com/">les Google Drive</a>, cliquer sur le fichier de réponses, puis « File », puis « Download as » et « Comma Separated Values »)
+            (Pour obtenir le fichier, aller dans <a href="https://drive.google.com/">le Google Drive</a>, cliquer sur le fichier de réponses, puis « File », puis « Download as » et « Comma Separated Values »)
             <br />
             <br />
             <input type="submit" value="Envoi" />
             </form></body></html>""", True)
+        exit()
 else:
     if len(sys.argv) != 3:
         print('Syntaxe : envoi_mails_eleves.py fichier_contacts.csv fichier_personnes_seance.csv')

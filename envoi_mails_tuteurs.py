@@ -3,42 +3,42 @@
 
 from envoi_mails_commun import *
 
-tuteurs = get_contacts(contacts)
-
-with people as fd:
-    seance = list(csv.reader(fd, delimiter=','))
-    headers = seance[0]
-    seance = map(lambda x:dict(zip(headers, map(normalize, x))), seance[1:])
-    fails = []
-    confirms = []
-    confirm_fails = []
-    aborts = []
-    abort_fails = []
-    for entree_seance in seance:
-        if not entree_seance['Nom']:
-            continue
-        if 'confirmation' not in list(map(normalize, headers)) or \
-                entree_seance['confirmation'] == 'oui':
-            lists = (confirms, confirm_fails)
-        elif entree_seance['confirmation'] == 'non':
-            lists = (aborts, abort_fails)
-        elif entree_seance['confirmation'] == 'doublon':
-            pass
-        else:
-            lists = (fails, fails)
-        found = False
-        for entree_global in tuteurs:
-            if not entree_global['First Name']:
-                continue
-            combinaisons = make_combinaisons(entree_global)
-            name = (entree_seance['Nom'], entree_seance['Prénom'])
-            if name in combinaisons:
-                lists[0].append((0, ' '.join(name), entree_global['E-mail Address']))
-                found = True
-        if not found:
-            lists[1].append(entree_seance)
-
 with cgi_capture():
+    tuteurs = get_contacts(contacts)
+
+    with people as fd:
+        seance = list(csv.reader(fd, delimiter=','))
+        headers = seance[0]
+        seance = map(lambda x:dict(zip(headers, map(normalize, x))), seance[1:])
+        fails = []
+        confirms = []
+        confirm_fails = []
+        aborts = []
+        abort_fails = []
+        for entree_seance in seance:
+            if not entree_seance['Nom']:
+                continue
+            if 'confirmation' not in list(map(normalize, headers)) or \
+                    entree_seance['confirmation'] == 'oui':
+                lists = (confirms, confirm_fails)
+            elif entree_seance['confirmation'] == 'non':
+                lists = (aborts, abort_fails)
+            elif entree_seance['confirmation'] == 'doublon':
+                pass
+            else:
+                lists = (fails, fails)
+            found = False
+            for entree_global in tuteurs:
+                if not entree_global['First Name']:
+                    continue
+                combinaisons = make_combinaisons(entree_global)
+                name = (entree_seance['Nom'], entree_seance['Prénom'])
+                if name in combinaisons:
+                    lists[0].append((0, ' '.join(name), entree_global['E-mail Address']))
+                    found = True
+            if not found:
+                lists[1].append(entree_seance)
+
     print()
     print('Confirmation :')
     sys.stdout.write('\t')
