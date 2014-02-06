@@ -16,11 +16,23 @@ with cgi_capture():
             fixed_headers.append(header)
         headers = fixed_headers
         seance = map(lambda x:dict(zip(headers, map(normalize, x))), seance[1:])
-        confirms = []
         fails = []
+        confirms = []
+        confirm_fails = []
+        aborts = []
+        abort_fails = []
         for entree_seance in seance:
             if not entree_seance['Nom']:
                 continue
+            if 'confirmation' not in list(map(normalize, headers)) or \
+                    entree_seance['confirmation'] == 'oui':
+                lists = (confirms, confirm_fails)
+            elif entree_seance['confirmation'] == 'non':
+                lists = (aborts, abort_fails)
+            elif entree_seance['confirmation'] == 'doublon':
+                pass
+            else:
+                lists = (fails, fails)
             best_match = None
             for entree_global in eleves:
                 if not entree_global['First Name']:
@@ -40,15 +52,31 @@ with cgi_capture():
                     if not best_match or (delta < best_match[0]):
                         best_match = (delta, ' '.join(nom), entree_global['E-mail Address'])
             if best_match and best_match[0] < 3:
-                confirms.append(best_match)
+                lists[0].append(best_match)
             else:
-                fails.append(entree_seance)
+                lists[1].append(entree_seance)
 
-    print('Confirmations :')
+    print()
+    print('Confirmation :')
     sys.stdout.write('\t')
     for confirm in confirms:
         print_email(confirm)
     print()
-    print('Échecs :')
+    print()
+    print('Échecs confirmation :')
+    for fail in confirm_fails:
+        print('\t' + str(fail))
+    print()
+    print('Non-confirmation :')
+    sys.stdout.write('\t')
+    for abort in aborts:
+        print_email(abort)
+    print()
+    print()
+    print('Échecs non-confirmation :')
+    for fail in abort_fails:
+        print('\t' + str(fail))
+    print()
+    print('État de confirmation inconnu :')
     for fail in fails:
         print('\t' + str(fail))
