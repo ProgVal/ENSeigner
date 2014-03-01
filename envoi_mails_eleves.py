@@ -1,21 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf8 -*-
 
-from envoi_mails_commun import *
+__builtins__.RUN_MAIN = True
+
+from common import *
 
 with cgi_capture():
     eleves = get_contacts(contacts)
 
     with people as fd:
-        seance = list(csv.reader(fd, delimiter=','))
-        headers = seance[0]
-        fixed_headers = list()
-        for header in headers:
-            while header in fixed_headers:
-                header += '_'
-            fixed_headers.append(header)
-        headers = fixed_headers
-        seance = map(lambda x:dict(zip(headers, map(normalize, x))), seance[1:])
+        seance = read_csv(fd)
         fails = []
         confirms = []
         confirm_fails = []

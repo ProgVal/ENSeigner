@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf8 -*-
 
-from envoi_mails_commun import *
+__builtins__.RUN_MAIN = True
+
+from common import *
 
 with cgi_capture():
     tuteurs = get_contacts(contacts)
 
     with people as fd:
-        seance = list(csv.reader(fd, delimiter=','))
-        headers = seance[0]
-        seance = map(lambda x:dict(zip(headers, map(normalize, x))), seance[1:])
+        seance = read_csv(fd)
         fails = []
         confirms = []
         confirm_fails = []

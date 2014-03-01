@@ -14,7 +14,7 @@ def normalize(x):
     return x.lower().replace(' ', '').replace('é', 'e').replace('è', 'e') \
             .replace('\'', '').replace('ï', 'i')
 
-def distance(s, t):
+def distance(s, t, deletion_cost=1):
     """Returns the levenshtein edit distance between two strings."""
     n = len(s)
     m = len(t)
@@ -34,8 +34,25 @@ def distance(s, t):
         for j in range(1, m+1):
             ct = t[j-1]
             cost = int(cs != ct)
-            d[i][j] = min(d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1]+cost)
+            d[i][j] = min(d[i-1][j]+deletion_cost, d[i][j-1]+deletion_cost, d[i-1][j-1]+cost)
     return d[n][m]
+
+def read_csv(fd, handle_confirms=False, normalize=True):
+    entries = list(csv.reader(fd, delimiter=','))
+    headers = entries[0]
+    fixed_headers = list()
+    for header in headers:
+        while header in fixed_headers:
+            header += '_'
+        fixed_headers.append(header)
+    headers = fixed_headers
+    if normalize:
+        entries = map(lambda x:dict(zip(headers, map(normalize, x))), entries[1:])
+    else:
+        entries = map(lambda x:dict(zip(headers, x)), entries[1:])
+    if handle_confirms and 'confirmation' in headers:
+        entries = map(lambda x:x['confirmation'] == 'oui', entries)
+    return entries
 
 def collect_extra_debug_data():
     """
@@ -151,7 +168,7 @@ else:
 def cgi_capture():
     return CgiCapture()
 
-if CGI_MODE:
+if CGI_MODE and RUN_MAIN:
     form = cgi.FieldStorage()
     if 'contacts' in form:
         assert 'people' in form
@@ -173,7 +190,7 @@ if CGI_MODE:
             <input type="submit" value="Envoi" />
             </form></body></html>""", True)
         exit()
-else:
+elif RUN_MAIN:
     if len(sys.argv) != 3:
         print('Syntaxe : envoi_mails_eleves.py fichier_contacts.csv fichier_personnes_seance.csv')
         exit(1)
