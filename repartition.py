@@ -44,6 +44,8 @@ def display_state(tutors, students, waiting, topic=None):
             display_state(tutors, students, waiting, topic)
 
 def main(tutors, students):
+    (h_tutors, tutors) = tutors
+    (h_students, students) = students
     tutors = list(tutors)
     students = list(students)
     names = [(get_name(x), x, True) for x in tutors] + \

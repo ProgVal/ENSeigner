@@ -37,7 +37,7 @@ def distance(s, t, deletion_cost=1):
             d[i][j] = min(d[i-1][j]+deletion_cost, d[i][j-1]+deletion_cost, d[i-1][j-1]+cost)
     return d[n][m]
 
-def read_csv(fd, handle_confirms=False, normalize=True):
+def read_csv(fd, handle_confirms=False, normalize_=True):
     entries = list(csv.reader(fd, delimiter=','))
     headers = entries[0]
     fixed_headers = list()
@@ -46,13 +46,17 @@ def read_csv(fd, handle_confirms=False, normalize=True):
             header += '_'
         fixed_headers.append(header)
     headers = fixed_headers
-    if normalize:
+    if normalize_:
         entries = map(lambda x:dict(zip(headers, map(normalize, x))), entries[1:])
     else:
         entries = map(lambda x:dict(zip(headers, x)), entries[1:])
     if handle_confirms and 'confirmation' in headers:
         entries = map(lambda x:x['confirmation'] == 'oui', entries)
-    return entries
+    entries = list(entries)
+    for entry in entries:
+        for (key, value) in list(entry.items()):
+            entry[key.lower()] = value
+    return (headers, entries)
 
 def collect_extra_debug_data():
     """

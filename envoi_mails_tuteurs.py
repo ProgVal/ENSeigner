@@ -9,7 +9,7 @@ with cgi_capture():
     tuteurs = get_contacts(contacts)
 
     with people as fd:
-        seance = read_csv(fd)
+        (headers, seance) = read_csv(fd)
         fails = []
         confirms = []
         confirm_fails = []

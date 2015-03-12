@@ -9,7 +9,14 @@ with cgi_capture():
     eleves = get_contacts(contacts)
 
     with people as fd:
-        seance = read_csv(fd)
+        (headers, seance) = read_csv(fd)
+        for row in seance:
+            for key in list(row.keys()):
+                if all(x == '_' for x in key) or \
+                        'toute infraction' in key or \
+                        'Toute infraction' in key or \
+                        'REGLES A RESPECTER' in key:
+                    del row[key]
         fails = []
         confirms = []
         confirm_fails = []
@@ -48,6 +55,7 @@ with cgi_capture():
             if best_match and best_match[0] < 3:
                 lists[0].append(best_match)
             else:
+                assert isinstance(entree_seance, dict), entree_seance
                 lists[1].append(entree_seance)
 
     print()
