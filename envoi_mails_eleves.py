@@ -25,7 +25,7 @@ with cgi_capture():
         for entree_seance in seance:
             if not entree_seance['Nom']:
                 continue
-            if 'confirmation' not in list(map(normalize, headers)) or \
+            if 'confirmation' not in entree_seance or \
                     entree_seance['confirmation'] == 'oui':
                 lists = (confirms, confirm_fails)
             elif entree_seance['confirmation'] == 'non':
@@ -55,7 +55,7 @@ with cgi_capture():
             if best_match and best_match[0] < 3:
                 lists[0].append(best_match)
             else:
-                assert isinstance(entree_seance, dict), entree_seance
+                assert isinstance(entree_seance, (dict, NormalizedDict)), entree_seance
                 lists[1].append(entree_seance)
 
     print()

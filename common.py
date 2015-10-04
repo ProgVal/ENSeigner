@@ -7,12 +7,63 @@ import sys
 import cgi
 import codecs
 import functools
+import collections
 
 CGI_MODE = 'GATEWAY_INTERFACE' in os.environ
 
 def normalize(x):
     return x.lower().replace(' ', '').replace('é', 'e').replace('è', 'e') \
             .replace('\'', '').replace('ï', 'i')
+
+class NormalizedDict(collections.MutableMapping):
+    def key(self, s):
+        if s is not None:
+            s = normalize(s)
+        return s
+
+    def __init__(self, dict=None, key=None):
+        if key is not None:
+            self.key = key
+        self.data = {}
+        if dict is not None:
+            self.update(dict)
+
+    def __repr__(self):
+        return '%s(%r)' % (self.__class__.__name__, self.data)
+
+    @classmethod
+    def fromkeys(cls, keys, s=None, dict=None, key=None):
+        d = cls(dict=dict, key=key)
+        for key in keys:
+            d[key] = s
+        return d
+
+    def __getitem__(self, k):
+        return self.data[self.key(k)][1]
+
+    def __setitem__(self, k, v):
+        self.data[self.key(k)] = (k, v)
+
+    def __delitem__(self, k):
+        del self.data[self.key(k)]
+
+    def __iter__(self):
+        return iter(self.data)
+
+    def __len__(self):
+        return len(self.data)
+
+    def items(self):
+        return self.data.values()
+
+    def items(self):
+        return self.data.values()
+
+    def keys(self):
+        L = []
+        for (k, __) in self.items():
+            L.append(k)
+        return L
 
 def distance(s, t, deletion_cost=1):
     """Returns the levenshtein edit distance between two strings."""
@@ -47,15 +98,17 @@ def read_csv(fd, handle_confirms=False, normalize_=True):
         fixed_headers.append(header)
     headers = fixed_headers
     if normalize_:
-        entries = map(lambda x:dict(zip(headers, map(normalize, x))), entries[1:])
+        entries = map(lambda x:NormalizedDict(zip(headers, map(normalize, x))), entries[1:])
     else:
-        entries = map(lambda x:dict(zip(headers, x)), entries[1:])
+        entries = map(lambda x:NormalizedDict(zip(headers, x)), entries[1:])
     if handle_confirms and 'confirmation' in headers:
         entries = map(lambda x:x['confirmation'] == 'oui', entries)
     entries = list(entries)
     for entry in entries:
         for (key, value) in list(entry.items()):
-            entry[key.lower()] = value
+            if key.lower().startswith('confirm'):
+                entry['confirmation'] = value
+                del entry[key]
     return (headers, entries)
 
 def collect_extra_debug_data():
