@@ -39,7 +39,7 @@ with cgi_capture():
                 if not entree_global['First Name']:
                     continue
                 combinaisons = make_combinaisons(entree_global)
-                name = (entree_seance['Nom'], entree_seance['Prénom'])
+                name = (entree_seance['Prénom'], entree_seance['Nom'])
                 if name in combinaisons:
                     best_match = (0, ' '.join(name), entree_global['E-mail Address'])
             if not best_match:
@@ -47,7 +47,7 @@ with cgi_capture():
                     if not entree_global['First Name']:
                         continue
                     combinaisons = make_combinaisons(entree_global)
-                    nom = (entree_seance['Nom'], entree_seance['Prénom'])
+                    nom = (entree_seance['Prénom'], entree_seance['Nom'])
                     delta = min(map(functools.partial(distance2, nom), combinaisons))
                     assert delta != 0
                     if not best_match or (delta < best_match[0]):
