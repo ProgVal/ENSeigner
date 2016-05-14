@@ -106,7 +106,7 @@ def read_csv(fd, handle_confirms=False, normalize_=True):
     entries = list(entries)
     for entry in entries:
         for (key, value) in list(entry.items()):
-            if key.lower().startswith('confirm'):
+            if key.lower().startswith('confirm') and key.lower() != 'confirmation':
                 entry['confirmation'] = value
                 del entry[key]
     return (headers, entries)
